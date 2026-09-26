@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bharat Live — India's Open-Data Wall (Earthquakes, AQI, ISS, Launches)</title>
+<meta name="description" content="One dark room, all live: recent earthquakes near India, live air quality of Indian cities, the ISS position right now, and upcoming rocket launches — built entirely from free open data.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://bharatlive.pages.dev/">
+<meta name="theme-color" content="#0f172a">
+<meta name="google-site-verification" content="GlkDu5ZL-CyyKjwPSj9d9X3Y2qsHUj_qAwRwxiLr7nI">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#050b14;color:#c7d2e0;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:clamp(1.2rem,4vw,1.7rem);letter-spacing:.05em}
+h1 .live{color:#22c55e;animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+.sub{color:#64748b;font-size:.8rem;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:16px}
+.panel{background:#0b1626;border:1px solid #1c2c44;border-radius:10px;padding:14px}
+.panel h2{font-size:.75rem;color:#5b7395;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+.big{font-size:1.6rem;color:#e8eef7;font-weight:700}
+.kv{display:flex;justify-content:space-between;font-size:.8rem;padding:3px 0;border-bottom:1px dashed #16233a}
+.kv b{color:#9fb4d0}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;padding:4px 0;border-bottom:1px solid #101d31}
+#map{height:300px;border-radius:8px;border:1px solid #1c2c44}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+button{font:inherit;border:1px solid #2b3f5f;background:#0e1b30;color:#9fd0ff;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.75rem}
+button:hover{background:#142440}
+.src{color:#3d5273;font-size:.68rem;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🛰️ BHARAT LIVE <span class="live">●</span></h1>
+  <p class="sub">India's open-data wall — every number below is fetched live from free public APIs. No login, no tracking, no server of ours involved. Inspired by the open-source "God's Eye View" project (pattern, not code).</p>
+</header>
+
+<div class="grid">
+  <div class="panel">
+    <h2>🇮🇳 ISS over Earth now</h2>
+    <div id="map"></div>
+    <div class="kv" style="margin-top:8px"><span>Latitude</span><b id="iss-lat">—</b></div>
+    <div class="kv"><span>Longitude</span><b id="iss-lon">—</b></div>
+    <div class="kv"><span>Altitude</span><b id="iss-alt">—</b></div>
+    <div class="kv"><span>Speed</span><b id="iss-vel">—</b></div>
+    <div class="kv"><span>Over India?</span><b id="iss-in">—</b></div>
+  </div>
+
+  <div class="panel">
+    <h2>🌫️ Air quality — major cities</h2>
+    <div id="aqi-rows"><div class="row"><span>loading…</span></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>🌏 Recent quakes — India region</h2>
+    <div id="q-rows"><div class="row"><span>loading…</span></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>🚀 Next launch worldwide</h2>
+    <div id="l-rows"><div class="row"><span>loading…</span></div></div>
+  </div>
+</div>
+
+<div class="btns">
+  <button onclick="loadAQI()">⟳ AQI</button>
+  <button onclick="loadQuakes()">⟳ Quakes</button>
+  <button onclick="loadLaunches()">⟳ Launches</button>
+</div>
+
+<p class="src">Sources (all free, fetched by your browser): Open-Meteo air quality (CAMS) · USGS Earthquake Hazards Program · wheretheiss.at · Launch Library 2 · Map © OpenStreetMap contributors (ODbL). Independent project — not affiliated with any agency.</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var map=L.map("map",{center:[15,75],zoom:2,worldCopyJump:true});
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:6,attribution:"&copy; OpenStreetMap"}).addTo(map);
+var issMk=null;
+function fmt(n,d){return n==null?"—":Number(n).toFixed(d==null?1:d)}
+function setISS(d){
+  document.getElementById("iss-lat").textContent=fmt(d.latitude,3)+"°";
+  document.getElementById("iss-lon").textContent=fmt(d.longitude,3)+"°";
+  document.getElementById("iss-alt").textContent=fmt(d.altitude,0)+" km";
+  document.getElementById("iss-vel").textContent=fmt(d.velocity,0)+" km/h";
+  var inIndia=d.latitude>=6&&d.latitude<=38&&d.longitude>=68&&d.longitude<=98;
+  document.getElementById("iss-in").textContent=inIndia?"✅ YES — look up!":"Not right now";
+  if(issMk){issMk.setLatLng([d.latitude,d.longitude])}else{issMk=L.circleMarker([d.latitude,d.longitude],{radius:7,color:"#38bdf8",fillColor:"#38bdf8",fillOpacity:.9}).addTo(map)}
+}
+function pollISS(){fetch("https://api.wheretheiss.at/v1/satellites/25544").then(function(r){return r.json()}).then(setISS).catch(function(){});}
+pollISS();setInterval(pollISS,10000);
+function bandColor(a){return a<=50?"#22c55e":a<=100?"#eab308":a<=150?"#f97316":a<=200?"#dc2626":"#a855f7"}
+var AQI_CITIES=[["Delhi",28.61,77.23],["Mumbai",19.08,72.88],["Bengaluru",12.97,77.59],["Hyderabad",17.39,78.49],["Chennai",13.06,80.22],["Kolkata",22.57,88.36],["Pune",18.52,73.86],["Jaipur",26.91,75.79],["Lucknow",26.85,80.95],["Ahmedabad",23.02,72.57]];
+function loadAQI(){
+  Promise.all(AQI_CITIES.map(function(c){return fetch("https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+c[1]+"&longitude="+c[2]+"&current=us_aqi").then(function(r){return r.json()}).then(function(d){return[c[0],d.current.us_aqi]}).catch(function(){return[c[0],null]})}))
+    .then(function(rows){
+      var el=document.getElementById("aqi-rows");el.innerHTML="";
+      rows.sort(function(a,b){return(b[1]||0)-(a[1]||0)}).forEach(function(r){
+        var d=document.createElement("div");d.className="row";
+        d.innerHTML="<span>"+r[0]+"</span><span style='color:"+(r[1]==null?"#64748b":bandColor(r[1]))+"'>"+(r[1]==null?"—":"AQI "+r[1])+"</span>";
+        el.appendChild(d);
+      });
+    });
+}
+function loadQuakes(){
+  fetch("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=5&maxlatitude=38&minlongitude=65&maxlongitude=98&minmagnitude=4&orderby=time&limit=8")
+    .then(function(r){return r.json()}).then(function(d){
+      var el=document.getElementById("q-rows");el.innerHTML="";
+      d.features.forEach(function(f){
+        var row=document.createElement("div");row.className="row";
+        row.innerHTML="<span>M "+f.properties.mag+" "+(f.properties.place||"")+"</span><span style='color:#5b7395'>"+new Date(f.properties.time).toLocaleDateString("en-IN")+"</span>";
+        el.appendChild(row);
+      });
+    });
+}
+function loadLaunches(){
+  fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=6&mode=list").then(function(r){return r.json()}).then(function(d){
+    var el=document.getElementById("l-rows");el.innerHTML="";
+    d.results.slice(0,6).forEach(function(r){
+      var isIN=(r.net&&(new Date(r.net)-Date.now())<86400000*60);
+      var row=document.createElement("div");row.className="row";
+      row.innerHTML="<span>"+((r.launch_service_provider||{}).name||"")+"</span><span style='color:#5b7395'>"+new Date(r.net).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})+"</span>";
+      el.appendChild(row);
+    });
+  }).catch(function(){document.getElementById("l-rows").innerHTML="<div class='row'><span>rate-limited — retry in a minute</span></div>"});
+}
+loadAQI();loadQuakes();loadLaunches();
+setInterval(loadAQI,600000);setInterval(loadQuakes,300000);
+</script>
+</body>
+</html>
