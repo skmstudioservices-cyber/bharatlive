@@ -30,7 +30,9 @@ h1 .live{color:#22c55e;animation:blink 1.6s infinite}
 button{font:inherit;border:1px solid #2b3f5f;background:#0e1b30;color:#9fd0ff;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.75rem}
 button:hover{background:#142440}
 .src{color:#3d5273;font-size:.68rem;margin-top:14px}
+.nnet-grid{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:.4rem}.nnet-grid a{display:block;padding:.5rem .6rem;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;font-size:.86rem;background:#fff}
 </style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Bharat Live", "url": "https://bharatlive.pages.dev/"}</script>
 </head>
 <body>
 <div class="wrap">
@@ -131,5 +133,6 @@ loadAQI();loadQuakes();loadLaunches();
 setInterval(loadAQI,600000);setInterval(loadQuakes,300000);
 </script>
 <script>(function(){try{if(!navigator.sendBeacon)return;var E='https://digipincode.india-in.workers.dev/api/collect',t0=Date.now(),ms=0,s=false;window.addEventListener('scroll',function(){try{var h=document.documentElement.scrollHeight-window.innerHeight,p=h>0?Math.round(window.scrollY/h*100):0;if(p>ms)ms=p}catch(e){}},{passive:true});function send(){if(s)return;s=true;try{navigator.sendBeacon(E,JSON.stringify({host:location.hostname,path:location.pathname,ref:document.referrer||'',event:'view',dwell:Math.round((Date.now()-t0)/1000),scroll:ms}))}catch(e){}}window.addEventListener('pagehide',send,{once:true});document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')send()});}catch(e){}})();</script>
+<div class="card"><h2>🧭 More near-me finders</h2><div class="nnet-grid"><a href="https://restareanearme.pages.dev/">🛣 Rest areas near me</a><a href="https://toiletsnearme.pages.dev/">🚻 Toilets near me</a><a href="https://cngpumpsnearme.pages.dev/">⛽ CNG pumps near me</a><a href="https://evchargersnearme.pages.dev/">⚡ EV chargers near me</a><a href="https://hospitalsnearme.pages.dev/">🏥 Hospitals near me</a><a href="https://atmsnearme.pages.dev/">🏧 ATMs near me</a><a href="https://hotelnearme.pages.dev/">🏨 Hotels near me</a><a href="https://digipincode.india-in.workers.dev/">📮 Pincode & DIGIPIN</a></div></div>
 </body>
 </html>
